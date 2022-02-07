@@ -1,0 +1,160 @@
+import os
+import json
+from sympy import isprime
+
+mostprime = 0
+tworoute = set()
+route = set(tworoute)
+save1 = 0
+totalcount = 0
+totalsaved = 0
+datalen = {}
+
+NumOfZeroes = 3
+
+nums = [i*(10**j) for i in range(1, 10) for j in range(NumOfZeroes+1)]
+
+ID = 2
+
+def save(loc, inc=True):
+    global save1
+    if inc:
+        save1 += 1
+    with open("Data/{}".format(loc), "w") as f:
+        json.dump(sorted(list(route)), f, indent=4)
+
+def addnum(a):
+    global route, save1, totalcount
+    for j in nums:
+        b = int("{}{}".format(a, j))
+        if b not in route and isprime(b):
+            totalcount += 1
+            if len(str(b)) >= 25:
+                pass
+            elif len(str(b)) <= 8:
+                tworoute.add(b)
+                print("Got To ", b, totalcount)
+                
+                save("UpTo{}-{}-{}.json".format(b, save1, ID))
+                route = set(tworoute)
+                addnum(b)
+            else:
+                route.add(b)
+                addnum(b)
+                
+    for j in nums:
+        b = int("{}{}".format(j, a))
+        if b not in route and isprime(b):
+            totalcount += 1
+            if len(str(b)) >= 25:
+                pass
+            elif len(str(b)) <= 8:
+                tworoute.add(b)
+                print("Got To ", b, totalcount)
+                
+                save("UpTo{}-{}-{}.json".format(b, save1, ID))
+                route = set(tworoute)
+                addnum(b)
+            else:
+                route.add(b)
+                addnum(b)
+                
+    if totalcount % 100000 == 0:
+        print(totalcount)
+
+def run():
+    global save1, nums, route, tworoute
+    for i in nums:
+        if isprime(i):
+            tworoute.add(i)
+            print("Starting with", i)
+            addnum(i)
+            save("UpTo{}-{}-{}.json".format(i+1, save1, ID))
+            print(len(route))
+
+
+def collectdata():
+    global mostprime, totalsaved
+
+    cur = 0
+    tot = 0
+    a = set({})
+    c = 0
+        
+    for filename in os.listdir('Data/'):
+        tot += 1
+
+    print(tot)
+    for filename in os.listdir('Data/'):
+        c += 1
+        with open("Data/" + filename, "r") as f:
+            t = json.load(f)
+
+        for i in t:
+            a.add(i)
+            totalsaved += 1
+            if i > mostprime:
+                mostprime = i
+            
+        if c % 500 == 0:
+            with open("DataDump/{}.json".format(cur), "w") as f:
+                json.dump(list(a), f, indent=4)
+            cur += 1
+            a = set({})
+            print("{}%".format(round((c/tot)*100), 2))
+
+    with open("DataDump/{}.json".format(cur), "w") as f:
+        json.dump(list(a), f, indent=4)
+    cur += 1
+    a = set({})
+    print("{}%".format(round((c/tot)*100), 2))
+
+
+    print("Number of primes: ", totalsaved)
+
+    print("The biggest has length: ", len(str(mostprime)))
+    print(mostprime)
+
+def coallate():
+    global mostprime, datalen
+    from math import ceil
+    
+    truefound = 0
+    datalen = {}
+
+    #start at 23 and work outwards. 23 Should be close to the most dense.
+    pathroute = [ceil(n / 2) * (-1)**(n + 1)+23 for n in range(46)] + [i for i in range(46, len(str(mostprime))+1)]
+    path = [i for i in pathroute if i <= len(str(mostprime))]
+    
+    for i in path:
+        c = set({})
+        for filename in os.listdir('DataDump/'):
+            j = 0
+            with open("DataDump/" + filename, "r") as f:
+                t = json.load(f)
+            t = set(t)
+            x = set(t)
+            
+            for p in x:
+                if len(str(p)) == i:
+                    c.add(p)
+                    t.remove(p)
+                    j += 1
+                    
+            with open("DataDump/" + filename, "w") as f:
+                print("Removed {} from {}".format(j, filename))
+                json.dump(list(t), f, indent=4)
+                
+        b = len(c)
+        with open("DataSet/Length{}.json".format(i), "w") as f:
+            json.dump(sorted(list(c)), f, indent=4)
+        truefound += b
+        print("Found {} for Length{}. Total of {} so far".format(b, i, truefound))
+        datalen[i] = b
+
+    print(datalen)
+
+if __name__ == "__main__":
+    run()
+    collectdata()
+    coallate()
