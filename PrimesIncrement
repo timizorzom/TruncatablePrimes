@@ -1,0 +1,69 @@
+import os
+import json
+from sympy import isprime
+from tqdm import tqdm
+
+NumOfZeroes = 3
+
+
+nums = {j+1 : [i*(10**j) for i in range(1, 10)] for j in range(NumOfZeroes+1)}
+primelen = {}
+
+Save = True
+
+def findprimes(start, add=1):
+    global primelen, Save
+    
+    for i in range(start, start+add):
+        k = 0
+        for j in nums:
+            m = set({})
+            try:
+                with open("DataSet/Length{}.json".format(i-j), "r") as f:
+                    t = json.load(f)
+                print("Running Length" + str(i-j))
+
+                b = len(t)
+                c = 0
+                for pi in tqdm(range(len(t))):
+                    p = t[pi]
+                    c += 1
+                    for x in nums[j]:
+                        n = int("{}{}".format(p, x))
+                        if isprime(n):
+                            m.add(n)
+                    for x in nums[j]:
+                        n = int("{}{}".format(x, p))
+                        if isprime(n):
+                            m.add(n)
+                            
+                with open("Data/cur{}.json".format(k), "w") as f:
+                    k += 1
+                    json.dump(list(m), f, indent=4)
+            except:
+                pass
+            print(str(len(nums)-j) + " files left of {}! Found {}".format(i, len(m)))
+
+        a = set({})
+        for filename in os.listdir("Data/"):
+            with open("Data/" + filename, "r") as f:
+                t = json.load(f)
+            os.remove("Data/" + filename)
+            
+            for p in t:
+                a.add(p)
+        count = len(a)
+
+        set1 = ""
+        if Save:
+            set1 = "Set"
+        with open("Data{}/Length{}.json".format(set1, i), "w") as f:
+            json.dump(sorted(list(a)), f, indent=4)
+        a = set({})
+        
+        primelen[i] = count
+        print("Found {} primes of length {}".format(count, i))
+
+
+if __name__ == "__main__":
+    findprimes(1, 10)
